@@ -9,8 +9,10 @@ def forecast(location):
         zip = find_zip(location)
     else:
         zip = location
-
-    forecast_result = noaa.get_forecasts(str(zip), 'US')
+    try:
+        forecast_result = noaa.get_forecasts(str(zip), 'US')
+    except Exception as e:
+        return 'API could not retrieve data. Wait a few minutes and retry.'
     forecast = {}
     for forecast_row in forecast_result:
         date = forecast_row['startTime'][:10]
@@ -34,7 +36,7 @@ def forecast(location):
     return forecast
 
 
-def multi_city_forecasts(location_list):
+def multi_city_forecasts(location_list: list):
     forecasts = {}
     for location in location_list:
         forecasts[location] = forecast(location)
