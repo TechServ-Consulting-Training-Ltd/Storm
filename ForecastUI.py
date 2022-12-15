@@ -1,6 +1,7 @@
 import csv
 import PySimpleGUI as sg
 from AnalyzeForecast import analyze_forecasts
+from ParseForecasts import parse_forcasts
 
 
 def loc_row(i):
@@ -16,6 +17,7 @@ column_layout = [
 layout = [
     [sg.T('Locations to obtain forecast for:')],
     [sg.Column(column_layout, key='column')],
+    [sg.Button('Run Forecast Report')],
     [sg.T('Criteria to highlight:')],
     [sg.T('Min Temp (F)'), sg.InputText(key='min_t', size=3, default_text=45), sg.T('Max Temp (F)'),
      sg.InputText(key='max_t', size=3, default_text=75)],
@@ -29,8 +31,9 @@ layout = [
     [sg.Checkbox('Rain', key='rain', default=True), sg.Checkbox('Snow', key='snow', default=True), sg.Checkbox(
         'Sleet', key='sleet', default=True), sg.Checkbox('Freezing Rain', key='freezing_rain', default=True),
      sg.Checkbox('Ice', key='ice', default=True)],
-    [sg.Submit()],
-    [sg.Table(key='output', values=[], headings=['Location', 'Date', 'Time', 'Condition', 'Value'], col_widths=30)],
+    [sg.Button('Run Criteria Report')],
+    [sg.Table(key='output', values=[], headings=['Location', 'Date', 'Time', 'Temperature', 'Wind', 'Weather'],
+              col_widths=30)],
     [sg.InputText('Export Location', key='save_as', size=30),
      sg.FileSaveAs('Save As', target='save_as', file_types=(('CSV', 'csv')))],
     [sg.Button('Export')],
@@ -47,7 +50,8 @@ while True:
     elif event == 'add':
         window.extend_layout(window['column'], loc_row(i))
         i += 1
-    elif event == 'Submit':
+    elif event == 'Run Criteria Report':
+        window['response'].update('Running Criteria Report')
         cities = [values['city']]
         states = [values['state']]
         keywords = []
@@ -67,17 +71,37 @@ while True:
             window['response'].update(result)
             break
         window['output'].update(values=result)
+        window['response'].update('Ran Criteria Report')
+    elif event == 'Run Forecast Report':
+        window['response'].update('Running Forecast Report')
+        cities = [values['city']]
+        states = [values['state']]
+        for k, v in values.items():
+            if isinstance(k, tuple):
+                if k[0] == 'city':
+                    cities.append(v)
+                if k[0] == 'state':
+                    states.append(v)
+        locations = [f'{x[0]}, {x[1]}' for x in zip(cities, states)]
+        result = parse_forcasts(locations)
+        if isinstance(result, str):
+            window['response'].update(result)
+            break
+        window['output'].update(values=result)
+        window['response'].update('Ran Forecast Report')
     elif event == 'Export':
+        window['response'].update('Exporting to csv')
         try:
             with open(values['save_as'], 'w', newline='') as file:
                 writer = csv.writer(file)
                 writer.writerow(['Location', 'Date', 'Time', 'Condition', 'Value'])
                 writer.writerows(result)
+            window['response'].update('Exported to csv')
         except:
             if '.csv' not in values['save_as']:
                 window['response'].update('Save as csv')
             else:
-                window['response'].update('Click Submit first')
+                window['response'].update('A report has to be ran first')
 
 event, values = window.read()
 window.close()
