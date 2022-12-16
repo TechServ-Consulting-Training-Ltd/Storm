@@ -11,13 +11,17 @@ def parse_forcasts(location_list: list, detail: bool = False):
                 time = parse_time(hour)
                 if len(time_forc) != 0:
                     if detail == False:
-                        temp = time_forc['temperature']
-                        wind = time_forc['windSpeed']
+                        T = time_forc['temperature']
+                        V = int(time_forc['windSpeed'])
+                        if T > 50 or V < 5:
+                            aT = T
+                        else:
+                            aT = int(35.74 + (0.6215*T) - 35.75*(V**0.16) + 0.4275*T*(V**0.16))
                         weather = time_forc['shortForecast']
                         try:
-                            forecasts_list.append((loc, date, time, temp, wind, weather))
+                            forecasts_list.append((loc, date, time, T, V, aT, weather))
                         except:
-                            forecasts_list.append((loc, dates, time, 'Error', 'Error', 'Error'))
+                            forecasts_list.append((loc, dates, time, 'Error', 'Error', 'Error', 'Error'))
     return forecasts_list
 
 

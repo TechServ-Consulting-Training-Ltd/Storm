@@ -19,8 +19,10 @@ layout = [
     [sg.Column(column_layout, key='column')],
     [sg.Button('Run Forecast Report')],
     [sg.T('Criteria to highlight:')],
-    [sg.T('Min Temp (F)'), sg.InputText(key='min_t', size=3, default_text=45), sg.T('Max Temp (F)'),
-     sg.InputText(key='max_t', size=3, default_text=75)],
+    [sg.T('Min Temp (F)'), sg.InputText(key='min_t', size=3, default_text=32),
+     sg.T('Max Temp (F)'), sg.InputText(key='max_t', size=3, default_text=90),
+     sg.T('Min Apparent Temp (F)'), sg.InputText(key='min_at', size=3, default_text=20),
+     sg.T('Max Apparent Temp (F)'), sg.InputText(key='max_at', size=3, default_text=100)],
     [sg.T('Max Sustained Wind (mph)'), sg.InputText(key='wind', size=3, default_text=20)],
     [sg.T('Keywords to search for:')],
     [sg.Checkbox('Heavy', key='heavy', default=True), sg.Checkbox('Strong', key='strong', default=True),
@@ -32,8 +34,9 @@ layout = [
         'Sleet', key='sleet', default=True), sg.Checkbox('Freezing Rain', key='freezing_rain', default=True),
      sg.Checkbox('Ice', key='ice', default=True)],
     [sg.Button('Run Criteria Report')],
-    [sg.Table(key='output', values=[], headings=['Location', 'Date', 'Time', 'Temperature', 'Wind', 'Weather'],
-              col_widths=30)],
+    [sg.Table(key='output', values=[],
+              headings=['Location', ' Date ', 'Time', 'Temp', 'Wind', 'A Temp', '      Weather      '],
+              auto_size_columns=True)],
     [sg.InputText('Export Location', key='save_as', size=30),
      sg.FileSaveAs('Save As', target='save_as', file_types=(('CSV', 'csv')))],
     [sg.Button('Export')],
@@ -64,8 +67,9 @@ while True:
             if v == True:
                 keywords.append(k)
         locations = [f'{x[0]}, {x[1]}' for x in zip(cities, states)]
-        criteria = {'min_temp': values['min_t'], 'max_temp': values['max_t'], 'max_wind': values['wind'],
-                    'keywords': keywords}
+        criteria = {'min_temp': values['min_t'], 'max_temp': values['max_t'],
+                    'min_atemp': values['min_at'], 'max_atemp': values['max_at'],
+                    'max_wind': values['wind'], 'keywords': keywords}
         result = analyze_forecasts(locations, criteria)
         if isinstance(result, str):
             window['response'].update(result)
