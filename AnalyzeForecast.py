@@ -1,26 +1,29 @@
 from NWS import multi_city_forecasts
+from ParseDate import parse_time
 
 
-def analyze_forecasts(location_list: list, criteria: dict):
+def analyze_forecasts(location_list: list, criteria: dict, detail: bool = False):
     forecasts = multi_city_forecasts(location_list)
     highlight_forecasts = []
     for loc, dates in forecasts.items():
         try:
-            for date, times in dates.items():
-                for time, time_forc in times.items():
-                    for k, v in time_forc.items():
-                        if 'temperature' == k:
-                            if v < int(criteria['min_temp']):
-                                highlight_forecasts.append((loc, date, time, k, v))
-                            if v > int(criteria['max_temp']):
-                                highlight_forecasts.append((loc, date, time, k, v))
-                        if 'windSpeed' == k:
-                            if int(v.split(' ')[0].strip()) > int(criteria['max_wind']):
-                                highlight_forecasts.append((loc, date, time, k, v))
-                        if 'shortForecast' == k:
-                            for word in criteria['keywords']:
-                                if word.lower() in v.lower():
+            for date, hours in dates.items():
+                for hour, time_forc in hours.items():
+                    if len(time_forc) != 0:
+                        for k, v in time_forc.items():
+                            time = parse_time(hour)
+                            if 'temperature' == k:
+                                if v < int(criteria['min_temp']):
                                     highlight_forecasts.append((loc, date, time, k, v))
+                                if v > int(criteria['max_temp']):
+                                    highlight_forecasts.append((loc, date, time, k, v))
+                            if 'windSpeed' == k:
+                                if int(v.split(' ')[0].strip()) > int(criteria['max_wind']):
+                                    highlight_forecasts.append((loc, date, time, k, v))
+                            if 'shortForecast' == k:
+                                for word in criteria['keywords']:
+                                    if word.lower() in v.lower():
+                                        highlight_forecasts.append((loc, date, time, k, v))
         except:
             highlight_forecasts.append((loc, dates, dates, dates, dates))
     return highlight_forecasts

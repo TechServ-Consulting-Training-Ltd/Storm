@@ -3,7 +3,7 @@ from ParseDate import parse_time
 
 
 def parse_forcasts(location_list: list, detail: bool = False):
-    forecasts = multi_city_forecasts(location_list, detail)
+    forecasts = multi_city_forecasts(location_list, 'standard')
     forecasts_list = []
     for loc, dates in forecasts.items():
         for date, hours in dates.items():
