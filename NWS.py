@@ -1,10 +1,8 @@
-import json
 from noaa_sdk import NOAA
 from FindZip import find_zip
 from FindLL import find_lat_lon
 from ParseDate import parse_date, parse_hour, parse_date_hour, parse_time
 from datetime import date, timedelta
-from requests import get
 from GetResponse import get_response
 
 noaa = NOAA()
@@ -48,29 +46,33 @@ def alerts(location: str):
     try:
         lat, lon = find_lat_lon(location)
     except Exception as e:
-        return e
+        return 'Failed to locate'
     url = f'https://api.weather.gov/alerts/active?point={lat},{lon}'
     response = get_response(url)
-    alerts_raw = json.loads(' '.join(response.text.split()).replace('{ ', '{').replace('} ', '}'))
-    alerts_features = alerts_raw['features']
-    if len(alerts_features) != 0:
-        alerts_cleaned = [
-            {'event': x['properties']['event'], 'headline': x['properties']['headline'],
-             'description': x['properties']['description'], 'start': x['properties']['onset'],
-             'end': x['properties']['ends']} for x in alerts_features]
-    else:
-        alerts_cleaned = []
-    return alerts_cleaned
+    # if isinstance(response, str)
+    alerts = []
+    try:
+        if len(response) != 0:
+            for a in response:
+                a_dict = {'event': a['properties']['event'], 'headline': a['properties']['headline'],
+                          'description': a['properties']['description'], 'start': a['properties']['onset'],
+                          'end': a['properties']['ends']}
+                alerts.append(a_dict)
+        else:
+            alerts = []
+    except:
+        alerts = []
+    return alerts
 
 
 def forecast_detailed(location):
     lat, lon = find_lat_lon(location)
     if lat == None:
-        return f'Failed to locate {location}'
+        return f'Failed to locate'
     try:
         forecast_detailed = noaa.points_forecast(lat, lon, type='forecastGridData')
     except Exception as e:
-        return e
+        return f'Failed to retrieve forecast'
 
     forecast_dict = {}
     for n1 in range(8):
@@ -101,14 +103,17 @@ def forecast_detailed(location):
 def forecast(location):
     if ',' in location:
         zip = find_zip(location)
-        if len(zip) != 5:
-            return zip
+        try:
+            if len(zip) != 5:
+                return zip
+        except Exception as e:
+            return f"Failed to locate"
     else:
         zip = location
     try:
         forecast_result = noaa.get_forecasts(str(zip), 'US')
     except Exception as e:
-        return e
+        return f"Failed to retrieve forecast"
 
     forecast_dict = {}
     for n1 in range(8):
@@ -132,21 +137,25 @@ def forecast(location):
 
 def multi_city_forecasts(location_list: list, type: str = 'standard'):
     forecasts = {}
-    for location in location_list:
+    missing = []
+    for loc in location_list:
+        print(f'{loc}: {type}')
         if type == 'detailed':
-            forecasts[location] = forecast_detailed(location)
+            forecasts[loc] = forecast_detailed(loc)
         elif type == 'standard':
-            forecasts[location] = forecast(location)
+            forecasts[loc] = forecast(loc)
         elif type == 'alerts':
-            forecasts[location] = alerts(location)
-    return forecasts
+            forecasts[loc] = alerts(loc)
+        if isinstance(forecasts[loc], str):
+            missing.append((loc, forecasts[loc]))
+    return forecasts, missing
 
 
 if __name__ == '__main__':
     locations = ['Lindale, TX', 'Dallas, TX', 'Norman, OK']
     # forecasts = multi_city_forecasts(locations, 'standard')
     # detailed = multi_city_forecasts(locations, 'detailed')
-    # alerts = multi_city_forecasts(locations, 'alerts')
+    alerts = multi_city_forecasts(locations, 'alerts')
     # zones = get_zones()
     # stations = get_stations()
     print()
